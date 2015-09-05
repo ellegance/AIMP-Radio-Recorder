@@ -68,7 +68,7 @@ void MainWindow::AIMPMessageHandler(WPARAM wparam, LPARAM lparam){ //on close ac
 
 			if (_model->IsTrackInModel(trackname, artist) && !aimpCommunicator.IsAIMPbugfeatureManualRadioTurnedOn() && aimpCommunicator.IsPlaying()){
 				aimpCommunicator.StartCapture();
-				_model->RemoveTrackFromModel(trackname, artist);
+				_model->RemoveTrack(trackname, artist);
 			}
 		}
 		break;

@@ -25,11 +25,6 @@
 #define ERR_APP_SINGLE_INST  300
 #define ERR_AIMP_NOT_RUNNING 301
 
-//          WParam: AIMP_RA_NOTIFY_PROPERTY (Notification ID)
-//          LParam: Property ID
-//WndProc is wired through WNDCLASSEX which we register for our class
-//Logic for update notifications: 1. Updated track name 2. Change playing mode 3. Radio/songs 4. Capture track 5. ...
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
 	try {
 		HANDLE hMutex = OpenMutex(MUTEX_ALL_ACCESS, 0, L"AIMP_TRACKRECORDER");
@@ -56,8 +51,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		ReleaseMutex(hMutex);
 	}
-	catch (int err_code) {//todo: alertbox with error explanation
-		return 0;
+	catch (int err_code) {
+		std::wstring error_text;
+		switch (err_code) {
+		case ERR_AIMP_NOT_RUNNING:
+			error_text = L"AIMP is not running now. Exiting";
+			break;
+		case ERR_APP_SINGLE_INST:
+			error_text = L"AIMP Track Recorder is already running. Exiting";
+			break;
+		}
+		int msgboxID = MessageBox(NULL, error_text.c_str(), (LPCWSTR)L"AIMP Track Recorder error", MB_ICONWARNING | MB_OK);
 	}
 	return 0;
 };

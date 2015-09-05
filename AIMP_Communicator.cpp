@@ -90,8 +90,7 @@ bool AIMP_Communicator::IsRadioMode() const{
 	wchar_t* buf = (wchar_t*)mappedFileInfo;
 	buf += sizeof(TAIMPRemoteFileInfo) / 2 + mappedFileInfo->AlbumLength + mappedFileInfo->ArtistLength + mappedFileInfo->DateLength;
 	std::wstring wfileName(buf, buf + mappedFileInfo->FileNameLength);
-	//some checks if starts with "X://..." or "http://..."
-	if (wfileName[0] == L'h' && wfileName[1] == L't' && wfileName[2] == L't' && wfileName[3] == L'p')
+	if (wfileName.compare(0, 4, L"http") == 0)
 		return true;
 	return false;
 };

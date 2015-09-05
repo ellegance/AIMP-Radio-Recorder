@@ -3,9 +3,13 @@
 
 #include "utility.h"
 
+#include <algorithm>
 #include <fstream>
+#include <list>
 #include <set>
+#include <sstream>
 #include <string>
+#include <unordered_map>
 
 // Copyright 2015 Viktor Chernov All Rights Reserved.
 //
@@ -27,17 +31,20 @@
 //Todo removal of recorded tracks from file of tracks.
 class FavTracksMemoryModel {
 private:
-	std::set<size_t> favTracks;
+	//std::set<size_t> favTracks;
+	std::unordered_map<size_t, std::pair<std::size_t, std::size_t>> favTracksMap;
+	std::vector<std::wstring> favTracksVector;
 	std::wfstream favTracksFile;
 	std::hash<std::wstring> trackHasher;
+	std::string trackFilename;
 	size_t numberOfRecordedTracks;
-	size_t getHash(std::wstring song) const;
-	
+	size_t GetHash(std::wstring song) const;
+
 public:
 	void AddTrackToModel(const std::wstring& trackName, const std::wstring& artistName);
 	bool IsTrackInModel(const std::wstring& trackName, const std::wstring& artistName) const;
-	void RemoveTrackFromModel(const std::wstring& trackName, const std::wstring& artistName);
-	std::wstring GetAllHashes() const;
+	void RemoveTrack(const std::wstring& trackName, const std::wstring& artistName);
+	//std::wstring GetAllHashes() const;
 	FavTracksMemoryModel(char* filename);
 	~FavTracksMemoryModel();
 	size_t GetNumberTracksInPlaylist() const;
