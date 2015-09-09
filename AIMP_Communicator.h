@@ -21,8 +21,9 @@
 
 #include <chrono>
 #include <memory>
+#include <mutex>
 #include <string>
-
+#include <thread>
 
 //Keep all AIMP handles
 //Implements AIMP communication and maintains AIMP states, property get/set
@@ -38,12 +39,23 @@ private:
 	std::unique_ptr<wchar_t[]> aimpWideCharRemoteAPINameptr;
 	HWND aimpHndlr;
 	HANDLE fileInfoHndl;
-	PAIMPRemoteFileInfo mappedFileInfo;
+	wchar_t const *mappedFilePtr;
 	mutable bool capturingNow;
 	mutable bool playingNow;
-	bool aimpRunning;
+	bool aimpRunning; //still considering to make this and aimpTrackRecorderShutdown static to avoid mutexes (static C++11 thread-safe?)
+	bool aimpTrackRecorderShutdown;
 	std::chrono::time_point<std::chrono::high_resolution_clock> captureCheckpoint;
+	mutable std::mutex aimpRunFlagMtx;
+	mutable std::mutex aimpTrackRecorderShutdownMtx;
+	void aimpContinuousRunCheck();
+	unsigned long aimpProcId;
+	unsigned long aimpExitCode;
+	std::thread aimpTrackThread;
+	HANDLE aimpProcHndl;
+	HWND callbackRegistrant;
+
 public:
+	void StopAIMPCommunicator();
 	static AIMP_Communicator& GetAIMP_CommunicatorInstance();
 	void StartCapture();
 	void StopCapture();
@@ -55,7 +67,7 @@ public:
 	bool IsPlaying() const;
 	bool IsCapturing() const;
 	bool IsAIMPRunning() const;
-	void RegisterCallback(HWND hWnd) const;
+	void RegisterCallback(HWND hWnd);
 	bool IsAIMPbugfeatureManualRadioTurnedOn() const;
 };
 

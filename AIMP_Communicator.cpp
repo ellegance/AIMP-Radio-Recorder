@@ -16,21 +16,43 @@
 
 #include "AIMP_Communicator.h"
 
-AIMP_Communicator::AIMP_Communicator(){
+AIMP_Communicator::AIMP_Communicator(): aimpTrackThread(){
 	aimpRemoteAPINameLen = strlen(AIMPRemoteAccessClass) + 1;
 	aimpWideCharRemoteAPINameptr.reset(new wchar_t[aimpRemoteAPINameLen]);
-	mbstowcs(aimpWideCharRemoteAPINameptr.get(), AIMPRemoteAccessClass, aimpRemoteAPINameLen); //MultiByteToWideChar(CP_ACP, 0, charArray, -1, dst.get(), length); //also possible
+	size_t result;
+	mbstowcs_s(&result, aimpWideCharRemoteAPINameptr.get(), aimpRemoteAPINameLen, &(AIMPRemoteAccessClass[0]), strlen(AIMPRemoteAccessClass));
 	aimpHndlr = FindWindow(aimpWideCharRemoteAPINameptr.get(), NULL);
-	DWORD err = GetLastError();
 	aimpRunning = aimpHndlr ? true : false;
 	GetUpdateCaptureStatus();
 	GetUpdatePlayingStatus();
 	fileInfoHndl = OpenFileMapping(FILE_MAP_READ, true, aimpWideCharRemoteAPINameptr.get());
-	mappedFileInfo = static_cast<PAIMPRemoteFileInfo>(MapViewOfFile(fileInfoHndl, FILE_MAP_READ, 0, 0, AIMPRemoteAccessMapFileSize));
+	mappedFilePtr = static_cast<wchar_t const *>(MapViewOfFile(fileInfoHndl, FILE_MAP_READ, 0, 0, AIMPRemoteAccessMapFileSize));
+	GetWindowThreadProcessId(aimpHndlr, &aimpProcId);
+	aimpProcHndl = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, aimpProcId);
+	aimpTrackRecorderShutdown = false;
+	aimpTrackThread = std::thread(&AIMP_Communicator::aimpContinuousRunCheck, this);
 	captureCheckpoint = std::chrono::high_resolution_clock::now();
 };
 
+void AIMP_Communicator::aimpContinuousRunCheck() {
+	for (;;) {
+		Sleep(500);
+		GetExitCodeProcess(aimpProcHndl, &aimpExitCode);
+		std::lock_guard<std::mutex> lockAimp(aimpRunFlagMtx);
+		aimpRunning = aimpExitCode == 259 ? true : false;
+		std::lock_guard<std::mutex> lockAimpTrackRecorder(aimpTrackRecorderShutdownMtx);
+		if (aimpExitCode != 259 || aimpTrackRecorderShutdown)
+			return;
+	}
+};
+
+void AIMP_Communicator::StopAIMPCommunicator() {
+	std::lock_guard<std::mutex> lockAimpTrackRecorder(aimpTrackRecorderShutdownMtx);
+	aimpTrackRecorderShutdown = true;
+};
+
 bool AIMP_Communicator::IsAIMPRunning() const{
+	std::lock_guard<std::mutex> lock(aimpRunFlagMtx);
 	return aimpRunning;
 };
 
@@ -72,24 +94,27 @@ bool AIMP_Communicator::GetUpdatePlayingStatus() const{
 };
 
 std::wstring AIMP_Communicator::GetTrackName() const{
-	wchar_t* buf = (wchar_t*)mappedFileInfo;
-	buf += sizeof(TAIMPRemoteFileInfo) / 2 + mappedFileInfo->AlbumLength + mappedFileInfo->ArtistLength + mappedFileInfo->DateLength
-		+ mappedFileInfo->FileNameLength + mappedFileInfo->GenreLength; //you cannot concat this expr with the last cause of wrong shift on sizeof struct! TODO /2 change
-	std::wstring wtrackName(buf, buf + mappedFileInfo->TitleLength);
+	TAIMPRemoteFileInfo const * mappedFileInfo = (TAIMPRemoteFileInfo const *)mappedFilePtr;
+	size_t name_begin_shift = sizeof(TAIMPRemoteFileInfo) / sizeof(wchar_t) + mappedFileInfo->AlbumLength + mappedFileInfo->ArtistLength 
+							  + mappedFileInfo->DateLength + mappedFileInfo->FileNameLength + mappedFileInfo->GenreLength;
+	size_t name_end_shift = name_begin_shift + mappedFileInfo->TitleLength;
+	std::wstring wtrackName(mappedFilePtr + name_begin_shift, mappedFilePtr + name_end_shift);
 	return wtrackName;
 };
 
 std::wstring AIMP_Communicator::GetArtistName() const{
-	wchar_t* buf = (wchar_t*)mappedFileInfo;
-	buf += sizeof(TAIMPRemoteFileInfo) / 2 + mappedFileInfo->AlbumLength;
-	std::wstring wartistName(buf, buf + mappedFileInfo->ArtistLength);
+	TAIMPRemoteFileInfo const * mappedFileInfo = (TAIMPRemoteFileInfo const *)mappedFilePtr;
+	size_t name_begin_shift = sizeof(TAIMPRemoteFileInfo) / sizeof(wchar_t) + mappedFileInfo->AlbumLength;
+	size_t name_end_shift = name_begin_shift + mappedFileInfo->ArtistLength;
+	std::wstring wartistName(mappedFilePtr + name_begin_shift, mappedFilePtr + name_end_shift);
 	return wartistName;
 };
 
 bool AIMP_Communicator::IsRadioMode() const{
-	wchar_t* buf = (wchar_t*)mappedFileInfo;
-	buf += sizeof(TAIMPRemoteFileInfo) / 2 + mappedFileInfo->AlbumLength + mappedFileInfo->ArtistLength + mappedFileInfo->DateLength;
-	std::wstring wfileName(buf, buf + mappedFileInfo->FileNameLength);
+	TAIMPRemoteFileInfo const * mappedFileInfo = (TAIMPRemoteFileInfo const *)mappedFilePtr;
+	size_t name_begin_shift = sizeof(TAIMPRemoteFileInfo) / sizeof(wchar_t) + mappedFileInfo->AlbumLength + mappedFileInfo->ArtistLength + mappedFileInfo->DateLength;
+	size_t name_end_shift = name_begin_shift + mappedFileInfo->FileNameLength;
+	std::wstring wfileName(mappedFilePtr + name_begin_shift, mappedFilePtr + name_end_shift);
 	if (wfileName.compare(0, 4, L"http") == 0)
 		return true;
 	return false;
@@ -103,14 +128,16 @@ bool AIMP_Communicator::IsCapturing() const{
 	return capturingNow;
 };
 
-void AIMP_Communicator::RegisterCallback(HWND hWnd) const{
+void AIMP_Communicator::RegisterCallback(HWND hWnd){
+	callbackRegistrant = hWnd;
 	SendMessage(aimpHndlr, WM_AIMP_COMMAND, AIMP_RA_CMD_REGISTER_NOTIFY, (LPARAM)hWnd);
 };
 
 AIMP_Communicator::~AIMP_Communicator(){
 	if (capturingNow)
 		SendMessage(aimpHndlr, WM_AIMP_PROPERTY, AIMP_RA_PROPERTY_RADIOCAP | AIMP_RA_PROPVALUE_SET, static_cast<LPARAM>(0));
-	UnmapViewOfFile(mappedFileInfo);
+	SendMessage(aimpHndlr, WM_AIMP_COMMAND, AIMP_RA_CMD_UNREGISTER_NOTIFY, (LPARAM)callbackRegistrant);
+	UnmapViewOfFile(mappedFilePtr);
 	CloseHandle(fileInfoHndl);
-	//aimpHndlr isn't needed to be SendMessage(aimpHndlr, WM_CLOSE, 0, 0 )?
+	aimpTrackThread.join();//exception non-safe
 };

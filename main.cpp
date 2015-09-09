@@ -25,9 +25,9 @@
 #define ERR_APP_SINGLE_INST  300
 #define ERR_AIMP_NOT_RUNNING 301
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int nCmdShow){ //avoid warning C4100
 	try {
-		HANDLE hMutex = OpenMutex(MUTEX_ALL_ACCESS, 0, L"AIMP_TRACKRECORDER");
+		HANDLE hMutex = OpenMutex(READ_CONTROL, 0, L"AIMP_TRACKRECORDER");
 		if (!hMutex)
 			hMutex = CreateMutex(0, 0, L"AIMP_TRACKRECORDER");
 		else
@@ -36,18 +36,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MSG message;
 
 		AIMP_Communicator& aimpCommunicator = AIMP_Communicator::GetAIMP_CommunicatorInstance();
-		if (!aimpCommunicator.IsAIMPRunning()) //todo: 1 more thread to track AIMP execution for throwing during execution
+		if (!aimpCommunicator.IsAIMPRunning())
 			throw ERR_AIMP_NOT_RUNNING;
 		FavTracksMemoryModel tracksModel("D:\\tracklist.txt");
 		MainWindow ui_window(L"AIMP RadioTrack recorder", hInstance, nCmdShow, &tracksModel, aimpCommunicator, L"Application", 100, 100, 361, 190);
 		HWND windowHWND = ui_window.GetHWnd();
 		aimpCommunicator.RegisterCallback(windowHWND);
 
-		//BOOL WINAPI GetMessage(_Out_ LPMSG lpMsg, _In_opt_ HWND hWnd, _In_ UINT wMsgFilterMin, _In_ UINT wMsgFilterMax);
-		while (GetMessage(&message, NULL, 0, 0)){
+		while (GetMessage(&message, NULL, 0, 0) > 0) {
 			TranslateMessage(&message);
 			DispatchMessage(&message);
+			if (!aimpCommunicator.IsAIMPRunning())
+				throw ERR_AIMP_NOT_RUNNING;
 		}
+
+		////a lot of CPU usage, but timed execution
+		//while (true) {
+		//	if (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) {
+		//		TranslateMessage(&message);
+		//		DispatchMessage(&message);
+		//	}
+		//	if (!aimpCommunicator.IsAIMPRunning())
+		//		throw ERR_AIMP_NOT_RUNNING;
+		//}
+		
 
 		ReleaseMutex(hMutex);
 	}
@@ -61,7 +73,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			error_text = L"AIMP Track Recorder is already running. Exiting";
 			break;
 		}
-		int msgboxID = MessageBox(NULL, error_text.c_str(), (LPCWSTR)L"AIMP Track Recorder error", MB_ICONWARNING | MB_OK);
+		MessageBox(NULL, error_text.c_str(), (LPCWSTR)L"AIMP Track Recorder error", MB_ICONWARNING | MB_OK);
 	}
 	return 0;
 };

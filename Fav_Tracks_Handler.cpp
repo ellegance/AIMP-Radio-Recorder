@@ -55,7 +55,6 @@ FavTracksMemoryModel::FavTracksMemoryModel(char* filename):
 			for (size_t vecIdx = 0; vecIdx < favTracksVector.size(); ++vecIdx)
 				favTracksFile << favTracksVector[vecIdx] << L'\n';
 		}
-		size_t asx = 4;
 	}
 	//if ((favTracksFile.rdstate() & std::ifstream::failbit) != 0 && (favTracksFile.rdstate() & std::ifstream::eofbit) != 0) //--> and here
 	//if ((favTracksFile.rdstate() & std::ifstream::badbit) != 0)

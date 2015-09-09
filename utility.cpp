@@ -31,7 +31,7 @@ void unifiedWstringfromWstring(std::wstring& uniWstr, const std::wstring& source
 	}
 };
 
-void unifiedWstringfromWstring(std::wstring& uniWstr, const std::wstring& sourceWStr, std::wstring::iterator begin, std::wstring::iterator end){
+void unifiedWstringfromWstring(std::wstring& uniWstr, const std::wstring& /*sourceWStr*/, std::wstring::iterator begin, std::wstring::iterator end){ //avoid warning C4100
 	for (auto iter = begin; iter != end; iter++){
 		if (iswalpha(*iter))
 			uniWstr += towupper(*iter);
@@ -44,7 +44,7 @@ void unifiedWstringfromWstring(std::wstring& uniWstr, const std::wstring& source
 void unifiedWstringfromString(std::wstring& uniWstr, const std::string& sourceStr, size_t begin, size_t end){
 	for (size_t idx = begin; idx < end; idx++){
 		if (isalpha(sourceStr[idx]))
-			uniWstr += toupper(sourceStr[idx]);
+			uniWstr += towupper(sourceStr[idx]);
 		else if (isdigit(sourceStr[idx]))
 			uniWstr += sourceStr[idx];
 	}

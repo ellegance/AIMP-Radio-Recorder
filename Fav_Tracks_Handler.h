@@ -29,9 +29,9 @@
 
 //Stores hashes of all songs for recording. Works with file of tracks.
 //Todo removal of recorded tracks from file of tracks.
+
 class FavTracksMemoryModel {
 private:
-	//std::set<size_t> favTracks;
 	std::unordered_map<size_t, std::pair<std::size_t, std::size_t>> favTracksMap;
 	std::vector<std::wstring> favTracksVector;
 	std::wfstream favTracksFile;
@@ -44,7 +44,6 @@ public:
 	void AddTrackToModel(const std::wstring& trackName, const std::wstring& artistName);
 	bool IsTrackInModel(const std::wstring& trackName, const std::wstring& artistName) const;
 	void RemoveTrack(const std::wstring& trackName, const std::wstring& artistName);
-	//std::wstring GetAllHashes() const;
 	FavTracksMemoryModel(char* filename);
 	~FavTracksMemoryModel();
 	size_t GetNumberTracksInPlaylist() const;

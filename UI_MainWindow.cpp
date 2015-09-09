@@ -116,6 +116,7 @@ LRESULT CALLBACK MainWindow::WindowMessageHandler(HWND hnd, UINT code, WPARAM wp
 		break;
 	}
 	case WM_DESTROY:{
+		aimpCommunicator.GetAIMP_CommunicatorInstance().StopAIMPCommunicator();
 		PostQuitMessage(EXIT_SUCCESS);
 		return 0;
 	}
@@ -169,10 +170,10 @@ LRESULT CALLBACK MainWindow::StaticWindowMessageHandler(HWND hnd, UINT code, WPA
 
 	if (code == WM_NCCREATE) {
 		LPCREATESTRUCT cs = (LPCREATESTRUCT)lparam;
-		SetWindowLong(hnd, GWLP_USERDATA, (long)cs->lpCreateParams);
+		SetWindowLongPtr(hnd, GWLP_USERDATA, (LONG_PTR)cs->lpCreateParams);
 	}
 	// Get a window pointer associated with this window
-	MainWindow *w = (MainWindow *)GetWindowLong(hnd, GWLP_USERDATA);
+	MainWindow *w = (MainWindow *)GetWindowLongPtr(hnd, GWLP_USERDATA);
 	// Always check the return value, as WndProc will be called before it is set
 	if (w) {
 		// Redirect messages to the window procedure of the associated window, if we have one
@@ -186,23 +187,6 @@ LRESULT CALLBACK MainWindow::StaticWindowMessageHandler(HWND hnd, UINT code, WPA
 };
 
 
-//void MainWindow::statusBarSetText(const std::wstring& txt, size_t section){
-//	SendMessage(MainWindowstatusBarhWnd, SB_SETTEXT, section, (LPARAM)&txt[0]/*(LPARAM)L"OKOK"*/);
-//};
-
-//MainWindow ui_window(L"AIMP RadioTrack recorder", hInstance, nCmdShow, L"Application", 100, 100, 363, 190, new FavTracksMemoryModel("C:\\tracklist.txt", 18));
-/*
-MainWindow(LPCWSTR windowName,
-HINSTANCE hInst,
-int cmdShow,
-LPCTSTR menuName = NULL,
-int x = CW_USEDEFAULT, int y = 0,
-int width = CW_USEDEFAULT, int height = 0,
-UINT classStyle = CS_HREDRAW | CS_VREDRAW,
-DWORD windowStyle = WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU,
-HWND hParent = NULL,
-FavTracksMemoryModel* model);
-*/
 MainWindow::MainWindow(LPCWSTR windowName,
 	HINSTANCE hInst,
 	int cmdShow,
@@ -222,7 +206,7 @@ MainWindow::MainWindow(LPCWSTR windowName,
 	wchar_t szClassName[] = L"MainWindowClass";
 	wc.cbSize = sizeof(wc);
 	wc.style = classStyle;
-	wc.lpfnWndProc = StaticWindowMessageHandler; //LRESULT(WINAPI *pWndProc)(HWND, UINT, WPARAM, LPARAM)
+	wc.lpfnWndProc = StaticWindowMessageHandler;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = sizeof(MainWindow*); //size of extra per-window data
 	wc.hInstance = hInst;
@@ -232,35 +216,15 @@ MainWindow::MainWindow(LPCWSTR windowName,
 	wc.lpszMenuName = menuName;
 	wc.lpszClassName = szClassName;
 	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
-	//DWORD err = GetLastError();
 
-	//aimpCommunicator = AIMP_Communicator::GetAIMP_CommunicatorInstance(); //what is the difference beetween this and :aimpCommunicator(aimpCommInstance) ? the last is optional initialization list
-															//~95% answer is that this isn't ref assigning, its just object operator=, you can assign reference only in
-															//constructor's base initializer list
 	if (!RegisterClassEx(&wc)) {
 		wchar_t msg[100] = L"Cannot register class: ";
 		lstrcatW(msg, szClassName);
 		MessageBox(NULL, msg, L"Error", MB_OK);
 		return;
 	}
-	/*
-	HWND WINAPI CreateWindow(
-	_In_opt_ LPCTSTR   lpClassName,
-	_In_opt_ LPCTSTR   lpWindowName,
-	_In_     DWORD     dwStyle,
-	_In_     int       x,
-	_In_     int       y,
-	_In_     int       nWidth,
-	_In_     int       nHeight,
-	_In_opt_ HWND      hWndParent,
-	_In_opt_ HMENU     hMenu,
-	_In_opt_ HINSTANCE hInstance,
-	_In_opt_ LPVOID    lpParam
-	);*/
-	//SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)this);
-	//CreateWindow(szClassName, windowName, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 500, 500, HWND_DESKTOP, NULL, GetModuleHandle(NULL), NULL);
+
 	hWnd = CreateWindow(szClassName, windowName, windowStyle, x, y, width, height, hParent, static_cast<HMENU>(NULL), hInst, this); // this call initiate pWndProc() call
-	//SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)&StaticWindowMessageHandler);
 
 	if (!hWnd) {
 		wchar_t text[100] = L"Cannot create window: ";
