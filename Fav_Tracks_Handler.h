@@ -1,16 +1,3 @@
-#ifndef FAV_TRACKS_HANDLER_H_
-#define FAV_TRACKS_HANDLER_H_
-
-#include "utility.h"
-
-#include <algorithm>
-#include <fstream>
-#include <list>
-#include <set>
-#include <sstream>
-#include <string>
-#include <unordered_map>
-
 // Copyright 2015 Viktor Chernov All Rights Reserved.
 //
 // AIMP RadioTrack Recorder
@@ -27,13 +14,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//Stores hashes of all songs for recording. Works with file of tracks.
-//Todo removal of recorded tracks from file of tracks.
+#ifndef FAV_TRACKS_HANDLER_H_
+#define FAV_TRACKS_HANDLER_H_
+
+#include "utility.h"
+
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <unordered_map>
+
+//Stores hashes, file offsets, names of all songs for recording. Works with file of tracks.
 
 class FavTracksMemoryModel {
 private:
-	std::unordered_map<size_t, std::pair<std::size_t, std::size_t>> favTracksMap;
-	std::vector<std::wstring> favTracksVector;
+	std::unordered_map<size_t, std::pair<std::size_t, std::size_t>> favTracksMap; //Map of: key - song hash, value - pair<start position (offset) in file, favTracksVector index of song>
+	std::vector<std::wstring> favTracksVector; //Vector of songs, order in vector is order in output file
 	std::wfstream favTracksFile;
 	std::hash<std::wstring> trackHasher;
 	std::string trackFilename;

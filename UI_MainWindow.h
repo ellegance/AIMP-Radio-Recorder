@@ -34,7 +34,7 @@ public:
 		UINT classStyle = CS_HREDRAW | CS_VREDRAW,
 		DWORD windowStyle = WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU,
 		HWND hParent = NULL);
-	HWND GetHWnd() { return hWnd; };
+	HWND GetHWnd() { return mainWindowHwnd; };
 	void InitializeStatusBar(HWND hnd);
 
 private:
@@ -44,15 +44,22 @@ private:
 
 	LRESULT CALLBACK WindowMessageHandler(HWND hnd, UINT code, WPARAM wparam, LPARAM lparam);
 //	void statusBarSetText(const std::wstring& txt, size_t section);
-	void UpdateStatusBarInfo();
+	void UpdateStatusBarAndButtonIconsInfo();
 	void UpdateCurrentTrackInfo();
 	void AIMPMessageHandler(WPARAM wparam, LPARAM lparam);
 
-	HWND hWnd;
-	HWND MainWindowstatusBarhWnd;
-	HWND MainWindowbuttonhWnd;
-	HWND MainWindowEditFieldhWnd;
-	HWND MainWindowEditField2hWnd;
+	HWND mainWindowHwnd;
+	HWND statusBarHwnd;
+	HWND addFavouriteButtonHwnd;
+	HBITMAP hIconAddFavourite;
+	HBITMAP hIconManualRecOn;
+	HBITMAP hIconManualRecOff;
+	HWND manualRecordSwitchButtonHwnd;
+	HWND artistNameLabelHwnd;
+	HWND trackNameLabelHwnd;
+	HWND artistLabelHwnd;
+	HWND trackLabelHwnd;
+	HWND hwndTip;
 	WNDCLASSEX wc;
 	HINSTANCE hinst;
 	FavTracksMemoryModel* _model;

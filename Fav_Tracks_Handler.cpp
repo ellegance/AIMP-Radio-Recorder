@@ -16,8 +16,7 @@
 
 #include "Fav_Tracks_Handler.h"
 
-FavTracksMemoryModel::FavTracksMemoryModel(char* filename):
-						trackFilename(filename){
+FavTracksMemoryModel::FavTracksMemoryModel(char* filename): trackFilename(filename) {
 	favTracksFile.open(filename, std::fstream::in | std::fstream::out | std::fstream::app);
 	//some is_open logic exception
 
@@ -32,10 +31,10 @@ FavTracksMemoryModel::FavTracksMemoryModel(char* filename):
 		size_t file_lines_count = std::count(std::istreambuf_iterator<wchar_t>(iss), std::istreambuf_iterator<wchar_t>(), L'\n');
 		iss.clear();
 		iss.seekg(0, std::ios::beg);
-		favTracksVector.reserve(file_lines_count); //
+		favTracksVector.reserve(file_lines_count);
 		size_t track_begin_idx = 0;
 		bool fileRewriteFlag = false;
-		while (!iss.eof()) {	
+		while (!iss.eof()) {
 			std::getline(iss, wstrsong);
 			if (!wstrsong.length() || wstrsong[0] == L'\0')
 				continue; //just skip empty lines and go on
@@ -64,23 +63,26 @@ FavTracksMemoryModel::FavTracksMemoryModel(char* filename):
 	numberOfRecordedTracks = 0;
 };
 
-void FavTracksMemoryModel::AddTrackToModel(const std::wstring& trackName, const std::wstring& artistName){
-	if (!IsTrackInModel(trackName, artistName)){
+void FavTracksMemoryModel::AddTrackToModel(const std::wstring& trackName, const std::wstring& artistName) {
+	if (!IsTrackInModel(trackName, artistName)) {
 		std::wstring track = artistName + trackName;
 		size_t trackHash = GetHash(track);
-		std::wstring prev_track = favTracksVector[favTracksVector.size() - 1];
-		size_t prev_track_hash = GetHash(prev_track);
-		size_t newTrackPosition = favTracksMap[prev_track_hash].first + track.length();
+		size_t newTrackPosition = 0;
+		if (favTracksVector.size()) {
+			std::wstring prev_track = favTracksVector[favTracksVector.size() - 1];
+			size_t prev_track_hash = GetHash(prev_track);
+			newTrackPosition = favTracksMap[prev_track_hash].first + track.length();
+		}
 		favTracksVector.push_back(track);
 		favTracksMap[trackHash] = std::make_pair(newTrackPosition, favTracksVector.size() - 1);
-		if (favTracksFile.is_open()){
+		if (favTracksFile.is_open()) {
 			favTracksFile << artistName << L" - " << trackName << std::endl;
 			//favTracksFile.flush();
 		}
 	}
 };
 
-size_t FavTracksMemoryModel::GetHash(std::wstring song) const{
+size_t FavTracksMemoryModel::GetHash(std::wstring song) const {
 	std::wstring uniwsong;
 	unifiedWstringfromWstring(uniwsong, song, song.begin(), song.end());
 	return trackHasher(uniwsong);
@@ -92,7 +94,7 @@ bool FavTracksMemoryModel::IsTrackInModel(const std::wstring& trackName, const s
 	return false;
 };
 
-void FavTracksMemoryModel::RemoveTrack(const std::wstring& trackName, const std::wstring& artistName){
+void FavTracksMemoryModel::RemoveTrack(const std::wstring& trackName, const std::wstring& artistName) {
 	std::wstring track = artistName + trackName;
 	size_t songHash = GetHash(track);
 	size_t songLn = track.length();
@@ -118,12 +120,12 @@ size_t FavTracksMemoryModel::GetNumberTracksInPlaylist() const {
 	return favTracksMap.size();
 };
 
-size_t FavTracksMemoryModel::TracksRecorded() const{
+size_t FavTracksMemoryModel::TracksRecorded() const {
 	return numberOfRecordedTracks;
 };
 
-FavTracksMemoryModel::~FavTracksMemoryModel(){
-	if (favTracksFile.is_open()){
+FavTracksMemoryModel::~FavTracksMemoryModel() {
+	if (favTracksFile.is_open()) {
 		favTracksFile.close();
 	}
 };

@@ -17,12 +17,12 @@
 #include "utility.h"
 
 //experimental parsing until first " - " is found
-std::pair<std::string, std::string> getArtistAndTrackName(std::string& song){
+std::pair<std::string, std::string> getArtistAndTrackName(std::string& song) {
 	size_t delimeter = song.find(" - ");
 	return std::pair<std::string, std::string>(std::string(song, 0, delimeter), std::string(song, delimeter+3, song.length()));
 };
 
-void unifiedWstringfromWstring(std::wstring& uniWstr, const std::wstring& sourceWStr, size_t begin, size_t end){
+void unifiedWstringfromWstring(std::wstring& uniWstr, const std::wstring& sourceWStr, size_t begin, size_t end) {
 	for (size_t idx = begin; idx < end; idx++){
 		if (iswalpha(sourceWStr[idx]))
 			uniWstr += towupper(sourceWStr[idx]);
@@ -31,8 +31,8 @@ void unifiedWstringfromWstring(std::wstring& uniWstr, const std::wstring& source
 	}
 };
 
-void unifiedWstringfromWstring(std::wstring& uniWstr, const std::wstring& /*sourceWStr*/, std::wstring::iterator begin, std::wstring::iterator end){ //avoid warning C4100
-	for (auto iter = begin; iter != end; iter++){
+void unifiedWstringfromWstring(std::wstring& uniWstr, const std::wstring& /*sourceWStr*/, std::wstring::iterator begin, std::wstring::iterator end) { //avoid warning C4100
+	for (auto iter = begin; iter != end; iter++) {
 		if (iswalpha(*iter))
 			uniWstr += towupper(*iter);
 		else if (iswdigit(*iter))
@@ -40,9 +40,8 @@ void unifiedWstringfromWstring(std::wstring& uniWstr, const std::wstring& /*sour
 	}
 };
 
-
-void unifiedWstringfromString(std::wstring& uniWstr, const std::string& sourceStr, size_t begin, size_t end){
-	for (size_t idx = begin; idx < end; idx++){
+void unifiedWstringfromString(std::wstring& uniWstr, const std::string& sourceStr, size_t begin, size_t end) {
+	for (size_t idx = begin; idx < end; idx++) {
 		if (isalpha(sourceStr[idx]))
 			uniWstr += towupper(sourceStr[idx]);
 		else if (isdigit(sourceStr[idx]))
@@ -50,14 +49,14 @@ void unifiedWstringfromString(std::wstring& uniWstr, const std::string& sourceSt
 	}
 };
 
-size_t getSongHash(std::string& song){
+size_t getSongHash(std::string& song) {
 	std::wstring wsong;
 	unifiedWstringfromString(wsong, song, 0, song.length());
 	std::hash<std::wstring> wstrhash;
 	return wstrhash(wsong);
 };
 
-size_t getSongHash(wchar_t* song_chars){
+size_t getSongHash(wchar_t* song_chars) {
 	std::wstring wsong(song_chars);
 	std::hash<std::wstring> wstrhash;
 	return wstrhash(wsong);

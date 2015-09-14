@@ -25,8 +25,10 @@
 #define ERR_APP_SINGLE_INST  300
 #define ERR_AIMP_NOT_RUNNING 301
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, int nCmdShow){ //avoid warning C4100
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
 	try {
+		UNREFERENCED_PARAMETER(hPrevInstance); //macro for L4 warning C4100 avoid 
+		UNREFERENCED_PARAMETER(lpCmdLine);
 		HANDLE hMutex = OpenMutex(READ_CONTROL, 0, L"AIMP_TRACKRECORDER");
 		if (!hMutex)
 			hMutex = CreateMutex(0, 0, L"AIMP_TRACKRECORDER");
@@ -34,7 +36,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 			throw ERR_APP_SINGLE_INST;
 
 		MSG message;
-
 		AIMP_Communicator& aimpCommunicator = AIMP_Communicator::GetAIMP_CommunicatorInstance();
 		if (!aimpCommunicator.IsAIMPRunning())
 			throw ERR_AIMP_NOT_RUNNING;
@@ -49,7 +50,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 			if (!aimpCommunicator.IsAIMPRunning())
 				throw ERR_AIMP_NOT_RUNNING;
 		}
-
 		////a lot of CPU usage, but timed execution
 		//while (true) {
 		//	if (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) {
@@ -59,8 +59,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
 		//	if (!aimpCommunicator.IsAIMPRunning())
 		//		throw ERR_AIMP_NOT_RUNNING;
 		//}
-		
-
 		ReleaseMutex(hMutex);
 	}
 	catch (int err_code) {
