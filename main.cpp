@@ -18,21 +18,20 @@
 // Tested on AIMP v.3.60
 
 #include "AIMP_Communicator.h"
-#include "UI_MainWindow.h"
 #include "Fav_Tracks_Handler.h"
 #include "resource.h"
+#include "UI_MainWindow.h"
+#include "WINAPI_Mutex_Wrapper.h"
 
 #define ERR_APP_SINGLE_INST  300
 #define ERR_AIMP_NOT_RUNNING 301
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
+	WinAPIMutex trackRecorderAppMutex = WinAPIMutex(NULL, NULL, L"AIMP_TRACKRECORDER");
 	try {
 		UNREFERENCED_PARAMETER(hPrevInstance); //macro for L4 warning C4100 avoid 
 		UNREFERENCED_PARAMETER(lpCmdLine);
-		HANDLE hMutex = OpenMutex(READ_CONTROL, 0, L"AIMP_TRACKRECORDER");
-		if (!hMutex)
-			hMutex = CreateMutex(0, 0, L"AIMP_TRACKRECORDER");
-		else
+		if (trackRecorderAppMutex.MutexAlreadyExisted())
 			throw ERR_APP_SINGLE_INST;
 
 		MSG message;
@@ -59,7 +58,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		//	if (!aimpCommunicator.IsAIMPRunning())
 		//		throw ERR_AIMP_NOT_RUNNING;
 		//}
-		ReleaseMutex(hMutex);
 	}
 	catch (int err_code) {
 		std::wstring error_text;
