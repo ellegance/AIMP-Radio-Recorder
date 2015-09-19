@@ -19,19 +19,21 @@
 FavTracksMemoryModel::FavTracksMemoryModel(char* filename): trackFilename(filename) {
 	favTracksFile.open(filename, std::fstream::in | std::fstream::out | std::fstream::app);
 	//some is_open logic exception
-
 	if (favTracksFile.is_open()) {
 		std::wstring contents;
 		favTracksFile.seekg(0, std::ios::end);
-		contents.resize(favTracksFile.tellg());
+		std::streamoff favTracksFileOffset = favTracksFile.tellg();
+		if (favTracksFileOffset > 0)
+			contents.resize(static_cast<size_t>(favTracksFileOffset));
 		favTracksFile.seekg(0, std::ios::beg);
 		favTracksFile.read(&contents[0], contents.size());
 		std::wistringstream iss(contents);
 		std::wstring wstrsong;
-		size_t file_lines_count = std::count(std::istreambuf_iterator<wchar_t>(iss), std::istreambuf_iterator<wchar_t>(), L'\n');
+		std::streamoff file_lines_count = std::count(std::istreambuf_iterator<wchar_t>(iss), std::istreambuf_iterator<wchar_t>(), L'\n');
+		if (file_lines_count > 0)
+			favTracksVector.reserve(static_cast<size_t>(file_lines_count));
 		iss.clear();
 		iss.seekg(0, std::ios::beg);
-		favTracksVector.reserve(file_lines_count);
 		size_t track_begin_idx = 0;
 		bool fileRewriteFlag = false;
 		while (!iss.eof()) {

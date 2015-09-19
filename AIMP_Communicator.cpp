@@ -95,8 +95,8 @@ bool AIMP_Communicator::GetUpdatePlayingStatus() const{
 
 std::wstring AIMP_Communicator::GetTrackName() const{
 	TAIMPRemoteFileInfo const * mappedFileInfo = (TAIMPRemoteFileInfo const *)mappedFilePtr;
-	size_t name_begin_shift = sizeof(TAIMPRemoteFileInfo) / sizeof(wchar_t) + mappedFileInfo->AlbumLength + mappedFileInfo->ArtistLength 
-							  + mappedFileInfo->DateLength + mappedFileInfo->FileNameLength + mappedFileInfo->GenreLength;
+	size_t name_begin_shift = offsetof(TAIMPRemoteFileInfo, ArtistLength) + mappedFileInfo->AlbumLength + mappedFileInfo->ArtistLength
+		+ mappedFileInfo->DateLength + mappedFileInfo->FileNameLength + mappedFileInfo->GenreLength;
 	size_t name_end_shift = name_begin_shift + mappedFileInfo->TitleLength;
 	std::wstring wtrackName(mappedFilePtr + name_begin_shift, mappedFilePtr + name_end_shift);
 	return wtrackName;
@@ -104,7 +104,7 @@ std::wstring AIMP_Communicator::GetTrackName() const{
 
 std::wstring AIMP_Communicator::GetArtistName() const{
 	TAIMPRemoteFileInfo const * mappedFileInfo = (TAIMPRemoteFileInfo const *)mappedFilePtr;
-	size_t name_begin_shift = sizeof(TAIMPRemoteFileInfo) / sizeof(wchar_t) + mappedFileInfo->AlbumLength;
+	size_t name_begin_shift = offsetof(TAIMPRemoteFileInfo, ArtistLength) + mappedFileInfo->AlbumLength;
 	size_t name_end_shift = name_begin_shift + mappedFileInfo->ArtistLength;
 	std::wstring wartistName(mappedFilePtr + name_begin_shift, mappedFilePtr + name_end_shift);
 	return wartistName;
@@ -112,7 +112,7 @@ std::wstring AIMP_Communicator::GetArtistName() const{
 
 bool AIMP_Communicator::IsRadioMode() const{
 	TAIMPRemoteFileInfo const * mappedFileInfo = (TAIMPRemoteFileInfo const *)mappedFilePtr;
-	size_t name_begin_shift = sizeof(TAIMPRemoteFileInfo) / sizeof(wchar_t) + mappedFileInfo->AlbumLength + mappedFileInfo->ArtistLength + mappedFileInfo->DateLength;
+	size_t name_begin_shift = offsetof(TAIMPRemoteFileInfo, ArtistLength) + mappedFileInfo->AlbumLength + mappedFileInfo->ArtistLength + mappedFileInfo->DateLength;
 	size_t name_end_shift = name_begin_shift + mappedFileInfo->FileNameLength;
 	std::wstring wfileName(mappedFilePtr + name_begin_shift, mappedFilePtr + name_end_shift);
 	if (wfileName.compare(0, 4, L"http") == 0)
